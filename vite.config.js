@@ -6,11 +6,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate", injectRegister: "auto",
-      includeAssets: ["favicon.png", "apple-touch-icon.png", "hero.jpg"],
+      includeAssets: ["favicon.png", "apple-touch-icon.png", "hero.jpg", "logo.jpg", "zone-strength.jpg", "zone-functional.jpg", "zone-fuelbar.jpg", "zone-retail.jpg", "zone-yoga.jpg", "zone-recovery.jpg", "zone-lounge.jpg"],
       manifest: {
         name: "SIRA Muscle Studios — Investor Pitch", short_name: "SIRA Pitch",
         description: "Jakarta's first capital-efficient Muscle Studios compound. Investor pitch. Works offline.",
-        theme_color: "#15110D", background_color: "#E6DFD0",
+        theme_color: "#ECE8DF", background_color: "#ECE8DF",
         display: "standalone", orientation: "portrait", start_url: "/",
         icons: [
           { src: "/pwa-192.png", sizes: "192x192", type: "image/png" },
