@@ -660,16 +660,28 @@ export default function App() {
       <div style={{ position: "relative", zIndex: 2, maxWidth: 1080, margin: "0 auto", padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 20 }}>
         <Card id="team">
           <H right={<span style={{ fontSize: 11, color: MUT }}>operators, not landlords</span>}>The Team</H>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 14, marginTop: 2 }}>
+          <p style={{ fontSize: 14.5, lineHeight: 1.7, color: "#4A4638", maxWidth: 760, margin: "2px 0 0" }}>
+            The two people who will run SIRA already operate a premium HYROX-format studio together at F45 Kemang — and one of them builds commercial spaces for a living. The model's two biggest risks, member retention and an on-budget build, are exactly what this team has already proven.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(252px,1fr))", gap: 14, marginTop: 18 }}>
             {[
-              ["Amelie Poerwoko", "CEO · Operations", "Runs the floor and the P&L — member experience, retention, and the day-to-day that turns a build into a business.", false],
-              ["Edward Triharto", "Design · Buildout", "Owns the compound from drawing to doors-open — the capital discipline that keeps the build lean and on budget.", false],
-              ["TOMS", "Operator · Backer", "The venture platform behind SIRA — systems, brand, and capital strategy across a portfolio of sport and lifestyle ventures.", true],
+              ["Amelie Poerwoko", "General Manager",
+                "Runs SIRA's exact format today — Studio Manager at F45 Kemang and HYROX-365 certified. Her edge is the two things this model lives on: retention (she lifted client retention to 85% through personalized programming and community) and revenue mix (full-margin studio merchandise, brand collaborations with Uniqlo, BliBli, Rexona and Clear). An economics degree and 15 years in lifestyle media give her both the P&L and the brand.",
+                "F45 Kemang Studio Mgr · HYROX-365 certified · 85% retention · brand collabs · BA Economics", false],
+              ["Edward Lumbanradja", "Studio Manager",
+                "Builds the space and runs the floor. As founder of Inhaustudio he has delivered commercial fit-outs on budget and on timeline — government offices at DPR RI, 5-star venues (Fairmont, Laguna Bali), corporate HQs — the exact capital discipline SIRA's CAPEX depends on. He is also Studio Manager at F45 Kemang, running daily operations, coach rosters and brand activations (Uniqlo, Blibli Sport for HYROX, Liquifie). Form and function in one operator.",
+                "Founder, Inhaustudio · on-budget fit-outs (DPR RI, 5-star venues) · F45 Kemang Studio Mgr · RAB / vendor negotiation", false],
+              ["TOMS", "Operator · Backer",
+                "The venture platform behind SIRA — operating systems, brand, and the capital model you are using on this page. Built across a portfolio of sport and lifestyle ventures.",
+                "Systems · brand · capital strategy", true],
             ].map((p) => (
-              <div key={p[0]} style={{ background: SURF2, border: `1px solid ${LINE}`, padding: "18px 17px" }}>
-                <div style={{ fontFamily: p[3] ? "'Caveat',cursive" : "'Archivo',sans-serif", fontWeight: p[3] ? 700 : 800, fontSize: p[3] ? 28 : 18, letterSpacing: "-.01em", color: INK }}>{p[0]}</div>
-                <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10.5, color: EMBER, letterSpacing: ".05em", marginTop: 3, textTransform: "uppercase" }}>{p[1]}</div>
+              <div key={p[0]} style={{ background: SURF2, border: `1px solid ${LINE}`, padding: "18px 17px", display: "flex", flexDirection: "column" }}>
+                <div style={{ fontFamily: p[4] ? "'Caveat',cursive" : "'Archivo',sans-serif", fontWeight: p[4] ? 700 : 800, fontSize: p[4] ? 28 : 19, letterSpacing: "-.01em", color: INK, lineHeight: 1 }}>{p[0]}</div>
+                <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10.5, color: EMBER, letterSpacing: ".05em", marginTop: 4, textTransform: "uppercase" }}>{p[1]}</div>
                 <p style={{ fontSize: 13, lineHeight: 1.55, color: "#4A4638", marginTop: 11 }}>{p[2]}</p>
+                <div style={{ marginTop: "auto", paddingTop: 12, borderTop: `1px dotted ${LINE}` }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, color: MUT, lineHeight: 1.55, marginTop: 8 }}>{p[3]}</div>
+                </div>
               </div>
             ))}
           </div>
