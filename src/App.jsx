@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, createContext, useContext } from "react";
 
 /* ══════════════════════════════════════════════════════════════
    TOMS · MUSCLE STUDIOS — Gym Operating Model
@@ -86,6 +86,83 @@ const ZONES = [
   ["recovery", "Recovery", "Sauna, cold plunge, contrast. Discipline · focus · freedom — and a premium add-on.", "Level 2"],
   ["lounge", "Community Lounge", "The room people stay in — events, co-working, belonging. The retention moat.", "Level 2"],
 ];
+
+/* ── UI components — module-scope (stable identity → native drag works) ── */
+const Ctl = createContext(null);
+
+const Card = ({ id, children, pad = 18 }) => (
+  <div id={id} style={{ background: SURF, border: `1px solid ${LINE}`, borderRadius: 8, padding: pad, scrollMarginTop: 168, boxShadow: "0 2px 8px rgba(0,0,0,.4)" }}>{children}</div>
+);
+const H = ({ children, right }) => (
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8, borderBottom: `1px solid ${LINE}`, paddingBottom: 9, marginBottom: 11 }}>
+    <h2 style={{ fontFamily: "'Archivo',sans-serif", fontSize: 13, fontWeight: 800, letterSpacing: ".14em", textTransform: "uppercase", color: BONE, margin: 0 }}>{children}</h2>
+    {right}
+  </div>
+);
+const Row = ({ l, v, sub, color, dim, strong }) => (
+  <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px dotted ${LINE}`, fontSize: 13, gap: 10 }}>
+    <span style={{ color: dim ? MUT : INK, paddingLeft: sub ? 14 : 0, fontWeight: strong ? 600 : 400 }}>{l}</span>
+    <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: color || (strong ? BONE : INK), whiteSpace: "nowrap", fontWeight: strong ? 600 : 400 }}>{v}</span>
+  </div>
+);
+const Foot = ({ children }) => <div style={{ fontSize: 10.5, color: MUT, marginTop: 8, lineHeight: 1.6 }}>{children}</div>;
+const Slider = ({ k, label, pct, suffix }) => {
+  const { a, set } = useContext(Ctl);
+  const r = RANGE[k] || [0, a[k] * 2 || 1, 1];
+  const disp = pct ? `${fmt(a[k] * 100, 0)}%` : `${fmt(a[k], a[k] % 1 ? 2 : 0)}${suffix || ""}`;
+  return (
+    <div style={{ marginBottom: 15 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", color: MUT, marginBottom: 6 }}>
+        <span>{label}</span>
+        <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: BONE, fontSize: 13 }}>{disp}</span>
+      </div>
+      <input type="range" min={r[0]} max={r[1]} step={r[2]} value={a[k]} onChange={(e) => set(k, e.target.value)} style={{ width: "100%", accentColor: BONE }} />
+    </div>
+  );
+};
+const Num = ({ k, label }) => {
+  const { a, set } = useContext(Ctl);
+  return (
+    <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontSize: 12.5, gap: 8 }}>
+      <span style={{ color: MUT }}>{label}</span>
+      <input type="number" value={a[k]} step={a[k] % 1 ? 0.5 : 1} onChange={(e) => set(k, e.target.value)}
+        style={{ width: 78, background: SURF2, border: `1px solid ${LINE}`, color: INK, padding: "5px 7px", borderRadius: 4, fontSize: 13, fontFamily: "'IBM Plex Mono',monospace", textAlign: "right" }} />
+    </label>
+  );
+};
+const ScaleRow = ({ gkey, label, base }) => {
+  const { scale, setScale } = useContext(Ctl);
+  const pct = scale[gkey];
+  const val = base * pct;
+  const d = val - base;
+  const c = pct < 1 ? EMBER : pct > 1 ? STEEL : INK;
+  return (
+    <div style={{ padding: "9px 0 10px", borderBottom: `1px dotted ${LINE}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, gap: 10 }}>
+        <span style={{ color: INK }}>{label} <span style={{ color: MUT, fontFamily: "'IBM Plex Mono',monospace", fontSize: 11 }}>· {fmt(pct * 100, 0)}%</span></span>
+        <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: c, whiteSpace: "nowrap" }}>
+          Rp {fmt(val, 1)}
+          {Math.abs(d) > 0.05 && <span style={{ fontSize: 11, marginLeft: 6 }}>{d > 0 ? "+" : "−"}{fmt(Math.abs(d), 1)}</span>}
+        </span>
+      </div>
+      <input type="range" min={0} max={2} step={0.05} value={pct}
+        onChange={(e) => setScale((s) => ({ ...s, [gkey]: +e.target.value }))}
+        style={{ width: "100%", accentColor: BONE, marginTop: 7 }} />
+    </div>
+  );
+};
+const Acc = ({ id, title, sub, children }) => {
+  const { open, toggle } = useContext(Ctl);
+  return (
+    <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 12, marginTop: 12 }}>
+      <button onClick={() => toggle(id)} style={{ width: "100%", background: "transparent", border: 0, padding: 0, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", color: INK }}>
+        <span style={{ fontFamily: "'Archivo',sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase" }}>{title}</span>
+        <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: MUT }}>{sub} <span style={{ color: BONE }}>{open[id] ? "−" : "+"}</span></span>
+      </button>
+      {open[id] && <div style={{ marginTop: 8 }}>{children}</div>}
+    </div>
+  );
+};
 
 export default function App() {
   const [a, setA] = useState(A0);
@@ -205,75 +282,8 @@ export default function App() {
   const jump = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   /* ── primitives ── */
-  const Slider = ({ k, label, pct, suffix }) => {
-    const r = RANGE[k] || [0, a[k] * 2 || 1, 1];
-    const disp = pct ? `${fmt(a[k] * 100, 0)}%` : `${fmt(a[k], a[k] % 1 ? 2 : 0)}${suffix || ""}`;
-    return (
-      <div style={{ marginBottom: 15 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", color: MUT, marginBottom: 6 }}>
-          <span>{label}</span>
-          <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: BONE, fontSize: 13 }}>{disp}</span>
-        </div>
-        <input type="range" min={r[0]} max={r[1]} step={r[2]} value={a[k]} onChange={(e) => set(k, e.target.value)} style={{ width: "100%", accentColor: BONE }} />
-      </div>
-    );
-  };
-
-  const Num = ({ k, label }) => (
-    <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontSize: 12.5, gap: 8 }}>
-      <span style={{ color: MUT }}>{label}</span>
-      <input type="number" value={a[k]} step={a[k] % 1 ? 0.5 : 1} onChange={(e) => set(k, e.target.value)}
-        style={{ width: 78, background: SURF2, border: `1px solid ${LINE}`, color: INK, padding: "5px 7px", borderRadius: 4, fontSize: 13, fontFamily: "'IBM Plex Mono',monospace", textAlign: "right" }} />
-    </label>
-  );
-
-  const Card = ({ id, children, pad = 18 }) => (
-    <div id={id} style={{ background: SURF, border: `1px solid ${LINE}`, borderRadius: 8, padding: pad, scrollMarginTop: 168, boxShadow: "0 2px 8px rgba(0,0,0,.4)" }}>{children}</div>
-  );
-  const H = ({ children, right }) => (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8, borderBottom: `1px solid ${LINE}`, paddingBottom: 9, marginBottom: 11 }}>
-      <h2 style={{ fontFamily: "'Archivo',sans-serif", fontSize: 13, fontWeight: 800, letterSpacing: ".14em", textTransform: "uppercase", color: BONE, margin: 0 }}>{children}</h2>
-      {right}
-    </div>
-  );
-  const Row = ({ l, v, sub, color, dim, strong }) => (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px dotted ${LINE}`, fontSize: 13, gap: 10 }}>
-      <span style={{ color: dim ? MUT : INK, paddingLeft: sub ? 14 : 0, fontWeight: strong ? 600 : 400 }}>{l}</span>
-      <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: color || (strong ? BONE : INK), whiteSpace: "nowrap", fontWeight: strong ? 600 : 400 }}>{v}</span>
-    </div>
-  );
-  const Foot = ({ children }) => <div style={{ fontSize: 10.5, color: MUT, marginTop: 8, lineHeight: 1.6 }}>{children}</div>;
-  const ScaleRow = ({ gkey, label, base }) => {
-    const pct = scale[gkey];
-    const val = base * pct;
-    const d = val - base;
-    const c = pct < 1 ? EMBER : pct > 1 ? STEEL : INK;
-    return (
-      <div style={{ padding: "9px 0 10px", borderBottom: `1px dotted ${LINE}` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, gap: 10 }}>
-          <span style={{ color: INK }}>{label} <span style={{ color: MUT, fontFamily: "'IBM Plex Mono',monospace", fontSize: 11 }}>· {fmt(pct * 100, 0)}%</span></span>
-          <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: c, whiteSpace: "nowrap" }}>
-            Rp {fmt(val, 1)}
-            {Math.abs(d) > 0.05 && <span style={{ fontSize: 11, marginLeft: 6 }}>{d > 0 ? "+" : "−"}{fmt(Math.abs(d), 1)}</span>}
-          </span>
-        </div>
-        <input type="range" min={0} max={2} step={0.05} value={pct}
-          onChange={(e) => setScale((s) => ({ ...s, [gkey]: +e.target.value }))}
-          style={{ width: "100%", accentColor: BONE, marginTop: 7 }} />
-      </div>
-    );
-  };
-  const Acc = ({ id, title, sub, children }) => (
-    <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 12, marginTop: 12 }}>
-      <button onClick={() => toggle(id)} style={{ width: "100%", background: "transparent", border: 0, padding: 0, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", color: INK }}>
-        <span style={{ fontFamily: "'Archivo',sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase" }}>{title}</span>
-        <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: MUT }}>{sub} <span style={{ color: BONE }}>{open[id] ? "−" : "+"}</span></span>
-      </button>
-      {open[id] && <div style={{ marginTop: 8 }}>{children}</div>}
-    </div>
-  );
-
   return (
+    <Ctl.Provider value={{ a, set, scale, setScale, open, toggle }}>
     <div style={{ minHeight: "100vh", background: BG, color: INK, fontFamily: "'IBM Plex Sans',sans-serif", position: "relative" }}>
       <style>{`
         body{margin:0;background:${BG}}
@@ -716,5 +726,6 @@ export default function App() {
         </div>
       </div>
     </div>
+    </Ctl.Provider>
   );
 }
