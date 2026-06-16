@@ -352,7 +352,7 @@ export default function App() {
           ))}
         </div>
         <div style={{ maxWidth: 1080, margin: "0 auto", padding: "0 16px 7px", display: "flex", gap: 6, overflowX: "auto" }}>
-          {[["opportunity","Opportunity"],["compound","Compound"],["plans","Plans"],["streamsNarr","Streams"],["model","Live Model"],["plS","P&L"],["capexS","CAPEX"],["rampS","Ramp"],["team","Team"],["ask","The Ask"]].map(([id, lbl]) => (
+          {[["opportunity","Opportunity"],["compound","Compound"],["plans","Plans"],["streamsNarr","Streams"],["model","Live Model"],["plS","P&L"],["rampS","Ramp"],["team","Team"],["ask","The Ask"],["why","Why Us"]].map(([id, lbl]) => (
             <button key={id} onClick={() => jump(id)} style={{ background: "transparent", border: `1px solid ${LINE}`, color: MUT, borderRadius: 999, padding: "4px 13px", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>{lbl}</button>
           ))}
         </div>
@@ -750,6 +750,38 @@ export default function App() {
           </div>
           <Foot>In return: a ~55% operating margin, capital back in under 25 months, and a brand designed to franchise. The first compound proves the model — the model is the asset. Every figure above is live in the model; move the capital lever to see the band.</Foot>
         </Card>
+
+        {/* WHY WE'RE DIFFERENT — closing manifesto */}
+        <div id="why" style={{ background: "#1A1714", borderRadius: 8, padding: "30px 26px 28px", scrollMarginTop: 168, boxShadow: "0 2px 8px rgba(0,0,0,.4)" }}>
+          <div style={{ fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: ".26em", textTransform: "uppercase", color: EMBER }}>Why we're different</div>
+          <h2 style={{ fontFamily: "'Archivo',sans-serif", fontWeight: 900, fontSize: 30, letterSpacing: "-.01em", lineHeight: 1.08, color: "#F3EFE4", margin: "12px 0 0", maxWidth: 760 }}>
+            Most gyms own the trainer. SIRA owns the network.
+          </h2>
+          <p style={{ fontSize: 15, lineHeight: 1.7, color: "rgba(243,239,228,.78)", maxWidth: 720, marginTop: 14 }}>
+            Traditional gyms hire coaches and rent you their hours. SIRA is built as a platform — a home base where fitness creators, athletes and aspiring trainers build their personal brand, host their own sessions, create content, and bring their communities through the door. We don't control every interaction on the floor; we <span style={{ color: "#F3EFE4" }}>enable the next generation of fitness professionals</span> and let their audiences become ours.
+          </p>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 1, background: "rgba(243,239,228,.1)", marginTop: 22, border: "1px solid rgba(243,239,228,.1)" }}>
+            {[
+              ["Members", "Access to diverse coaches, training styles and communities — all under one roof."],
+              ["Creators", "A professional space to create, engage and monetize their audience."],
+              ["Aspiring trainers", "A launchpad to build a reputation and a client base from day one."],
+              ["SIRA", "Organic acquisition, authentic marketing, and community engagement that compounds."],
+            ].map((w) => (
+              <div key={w[0]} style={{ background: "#1A1714", padding: "16px 16px 18px" }}>
+                <div style={{ fontFamily: "'Archivo',sans-serif", fontWeight: 800, fontSize: 13, letterSpacing: ".02em", textTransform: "uppercase", color: "#D8B27A" }}>{w[0]}</div>
+                <div style={{ fontSize: 13, color: "rgba(243,239,228,.72)", marginTop: 7, lineHeight: 1.55 }}>{w[1]}</div>
+              </div>
+            ))}
+          </div>
+
+          <p style={{ fontSize: 15, lineHeight: 1.7, color: "rgba(243,239,228,.78)", maxWidth: 720, marginTop: 22 }}>
+            Every creator who joins brings an audience. Every audience becomes members. Every member makes the next creator want in. That's the network effect a traditional gym can't buy — and the reason SIRA grows more valuable with every coach, athlete and member who walks in.
+          </p>
+          <p style={{ fontFamily: "'Archivo',sans-serif", fontWeight: 800, fontSize: 21, lineHeight: 1.2, letterSpacing: "-.005em", color: "#F3EFE4", marginTop: 18, maxWidth: 640 }}>
+            A facility depreciates. A network compounds. <span style={{ color: EMBER }}>We're building the network.</span>
+          </p>
+        </div>
 
         <div style={{ textAlign: "center", padding: "20px 0 54px" }}>
           <div style={{ fontFamily: "'Anton',sans-serif", fontSize: 30, color: BONE, letterSpacing: ".02em" }}>SIRA</div>
