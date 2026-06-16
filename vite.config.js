@@ -6,7 +6,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate", injectRegister: "auto",
-      includeAssets: ["favicon.png", "apple-touch-icon.png", "hero.jpg", "logo.jpg", "zone-strength.jpg", "zone-functional.jpg", "zone-fuelbar.jpg", "zone-retail.jpg", "zone-yoga.jpg", "zone-recovery.jpg", "zone-lounge.jpg"],
+      includeAssets: ["favicon.png","apple-touch-icon.png","hero.jpg","logo.jpg","zone-strength.jpg","zone-functional.jpg","zone-fuelbar.jpg","zone-retail.jpg","zone-reception.jpg","zone-studio.jpg","zone-recovery.jpg","zone-lounge.jpg","zone-courtyard.jpg","plan-site.jpg","plan-ground.jpg","plan-second.jpg"],
       manifest: {
         name: "SIRA Muscle Studios — Investor Pitch", short_name: "SIRA Pitch",
         description: "Jakarta's first capital-efficient Muscle Studios compound. Investor pitch. Works offline.",

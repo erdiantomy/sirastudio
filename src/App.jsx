@@ -78,13 +78,15 @@ const STREAMS = [
   ["Community / space", "Lounge · rentals · hosting", "anc"],
 ];
 const ZONES = [
-  ["strength", "Strength", "Plate-loaded racks, platforms, free weights — the floor that anchors the membership.", "Level 1"],
+  ["strength", "Strength Zone", "Plate-loaded racks, platforms, free weights — the floor that anchors the membership.", "Level 1"],
   ["functional", "Functional · HYROX", "A regulation sled track and rig. The format Jakarta is searching for and can't yet find.", "Level 1"],
   ["fuelbar", "Fuel Bar", "Protein, cold brew, single-origin kopi — where a workout becomes a habit and a hangout.", "Level 1"],
   ["retail", "Retail", "Apparel and supplements merchandised like a boutique. Margin on every visit.", "Level 1"],
-  ["yoga", "Yoga · Pilates", "A light-filled studio upstairs. Mobility, breath, and a second membership tier.", "Level 2"],
-  ["recovery", "Recovery", "Sauna, cold plunge, contrast. Discipline · focus · freedom — and a premium add-on.", "Level 2"],
+  ["reception", "Reception", "The arrival moment — branded, warm, hospitality-grade. First impressions sell memberships.", "Level 1"],
+  ["studio", "Studio · Yoga / Pilates / HIIT", "A light-filled upstairs studio. Mobility, breath and conditioning — a second membership tier.", "Level 2"],
+  ["recovery", "Recovery", "Sauna, cold plunge, contrast therapy. Discipline · focus · freedom — and a premium add-on.", "Level 2"],
   ["lounge", "Community Lounge", "The room people stay in — events, co-working, belonging. The retention moat.", "Level 2"],
+  ["courtyard", "Outdoor Courtyard", "A tropical, lantern-lit courtyard for classes, socials and brand activations after dark.", "Level 2"],
 ];
 
 /* ── UI components — module-scope (stable identity → native drag works) ── */
@@ -350,7 +352,7 @@ export default function App() {
           ))}
         </div>
         <div style={{ maxWidth: 1080, margin: "0 auto", padding: "0 16px 7px", display: "flex", gap: 6, overflowX: "auto" }}>
-          {[["opportunity","Opportunity"],["compound","Compound"],["streamsNarr","Streams"],["model","Live Model"],["plS","P&L"],["capexS","CAPEX"],["rampS","Ramp"],["team","Team"],["ask","The Ask"]].map(([id, lbl]) => (
+          {[["opportunity","Opportunity"],["compound","Compound"],["plans","Plans"],["streamsNarr","Streams"],["model","Live Model"],["plS","P&L"],["capexS","CAPEX"],["rampS","Ramp"],["team","Team"],["ask","The Ask"]].map(([id, lbl]) => (
             <button key={id} onClick={() => jump(id)} style={{ background: "transparent", border: `1px solid ${LINE}`, color: MUT, borderRadius: 999, padding: "4px 13px", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>{lbl}</button>
           ))}
         </div>
@@ -403,6 +405,37 @@ export default function App() {
                 <div style={{ padding: "12px 13px 15px" }}>
                   <div style={{ fontFamily: "'Archivo',sans-serif", fontWeight: 800, fontSize: 14, letterSpacing: ".01em", textTransform: "uppercase" }}>{z[1]}</div>
                   <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "#4A4638", marginTop: 5 }}>{z[2]}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* FLOOR PLANS */}
+        <Card id="plans">
+          <H right={<span style={{ fontSize: 11, color: MUT }}>750 m² · two floors</span>}>Site & Floor Plans</H>
+          <p style={{ fontSize: 14.5, lineHeight: 1.7, color: "#4A4638", maxWidth: 720, margin: "2px 0 0" }}>
+            A purpose-built compound, not a converted shophouse. 750 m² of land, a 250 m² footprint built over two floors, and a 250 m² parking-and-courtyard frontage — drawn to brief before a single rupiah of CAPEX is committed.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(118px,1fr))", gap: 1, background: LINE, marginTop: 16, border: `1px solid ${LINE}` }}>
+            {[["750 m²", "total land"], ["250 m²", "building footprint"], ["500 m²", "built · 2 floors"], ["250 m²", "parking & outdoor"], ["30 × 25 m", "site dimensions"]].map(([v, k]) => (
+              <div key={k} style={{ background: SURF2, padding: "13px 12px" }}>
+                <div style={{ fontFamily: "'Anton',sans-serif", fontSize: 19, color: INK, lineHeight: 1 }}>{v}</div>
+                <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9.5, color: MUT, letterSpacing: ".04em", textTransform: "uppercase", marginTop: 5 }}>{k}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 14, marginTop: 16 }}>
+            {[
+              ["plan-site.jpg", "Site Plan", "Building, parking and courtyard across the 750 m² lot."],
+              ["plan-ground.jpg", "Ground Floor · Level 1", "Strength, Functional/HYROX, Fuel Bar, Retail, Reception, lockers."],
+              ["plan-second.jpg", "Second Floor · Level 2", "Studio, Community Lounge, Recovery (sauna + cold plunge), Office, Retail."],
+            ].map((p) => (
+              <div key={p[0]} style={{ background: SURF2, border: `1px solid ${LINE}`, overflow: "hidden" }}>
+                <img src={`/${p[0]}`} alt={p[1]} style={{ width: "100%", height: "auto", display: "block", background: "#fff" }} />
+                <div style={{ padding: "11px 13px 14px" }}>
+                  <div style={{ fontFamily: "'Archivo',sans-serif", fontWeight: 800, fontSize: 13, letterSpacing: ".02em", textTransform: "uppercase" }}>{p[1]}</div>
+                  <p style={{ fontSize: 12, lineHeight: 1.5, color: "#4A4638", marginTop: 5 }}>{p[2]}</p>
                 </div>
               </div>
             ))}
