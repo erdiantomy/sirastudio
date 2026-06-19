@@ -171,6 +171,7 @@ export default function App() {
   const [memberProbe, setMemberProbe] = useState(300);
   const [scale, setScale] = useState({ fac: 1, mkt: 1, tech: 1, adm: 1 });
   const [capital, setCapital] = useState(7.99);
+  const [fees, setFees] = useState({ mgmt: true, perf: true });
   const [open, setOpen] = useState({ rev: true, capex: false, opex: true, fac: false, mkt: false, comp: false });
 
   const set = (k, raw) => {
@@ -352,7 +353,7 @@ export default function App() {
           ))}
         </div>
         <div style={{ maxWidth: 1080, margin: "0 auto", padding: "0 16px 7px", display: "flex", gap: 6, overflowX: "auto" }}>
-          {[["opportunity","Opportunity"],["compound","Compound"],["plans","Plans"],["streamsNarr","Streams"],["model","Live Model"],["plS","P&L"],["rampS","Ramp"],["team","Team"],["ask","The Ask"],["why","Why Us"]].map(([id, lbl]) => (
+          {[["opportunity","Opportunity"],["compound","Compound"],["plans","Plans"],["streamsNarr","Streams"],["model","Live Model"],["plS","P&L"],["roiS","ROI"],["rampS","Ramp"],["team","Team"],["ask","The Ask"],["why","Why Us"]].map(([id, lbl]) => (
             <button key={id} onClick={() => jump(id)} style={{ background: "transparent", border: `1px solid ${LINE}`, color: MUT, borderRadius: 999, padding: "4px 13px", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>{lbl}</button>
           ))}
         </div>
@@ -628,6 +629,57 @@ export default function App() {
                   <span style={{ fontSize: 12, color: MUT }}>Rev/OPEX <b style={{ color: m.probeRatio >= 2 ? STEEL : INK, fontFamily: "'IBM Plex Mono',monospace" }}>{fmt(m.probeRatio, 2)}×</b></span>
                 </div>
               </div>
+            </Card>
+
+            <Card id="roiS">
+              <H right={<span style={{ fontSize: 11, color: MUT }}>annual · steady state</span>}>Investor Returns · ROI</H>
+              {(() => {
+                const annual = m.noi * 12;                          // gross annual net profit (jt)
+                const mgmt = 0.02 * m.totalCapex;                   // 2% of total CAPEX (jt)
+                const perf = 0.20 * annual;                         // 20% of net profit (jt)
+                const net = annual - (fees.mgmt ? mgmt : 0) - (fees.perf ? perf : 0);
+                const roi = m.totalFunding > 0 ? (net / m.totalFunding) * 100 : 0;
+                const pbYrs = net > 0 ? m.totalFunding / net : Infinity;
+                const rp = net > 0 ? STEEL : EMBER;
+                return (
+                  <>
+                    <div style={{ display: "flex", alignItems: "flex-end", gap: 16, flexWrap: "wrap", padding: "2px 0 6px" }}>
+                      <div>
+                        <div style={{ fontFamily: "'Anton',sans-serif", fontSize: 52, lineHeight: .9, color: rp }}>{fmt(roi, 1)}<span style={{ fontSize: 26 }}>%</span></div>
+                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9.5, color: MUT, letterSpacing: ".06em", textTransform: "uppercase", marginTop: 6 }}>annual ROI · return on capital invested</div>
+                      </div>
+                      <div style={{ marginLeft: "auto", textAlign: "right" }}>
+                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 18, color: rp }}>Rp {fmt(net, 0)} jt<span style={{ fontSize: 11, color: MUT }}> / yr</span></div>
+                        <div style={{ fontSize: 11, color: MUT, marginTop: 3 }}>net return to investor</div>
+                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 13, color: INK, marginTop: 6 }}>{isFinite(pbYrs) ? `${fmt(pbYrs, 1)} yr payback` : "—"}</div>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 6 }}>
+                      <Row l="Gross annual return" v={`Rp ${fmt(annual, 0)} jt`} strong />
+                      <Row l="− Management fee · 2% of CAPEX" v={fees.mgmt ? `− ${fmt(mgmt, 1)}` : "— off"} sub dim color={fees.mgmt ? EMBER : MUT} />
+                      <Row l="− Performance fee · 20% of net profit" v={fees.perf ? `− ${fmt(perf, 1)}` : "— off"} sub dim color={fees.perf ? EMBER : MUT} />
+                      <Row l="Net return to investor" v={`Rp ${fmt(net, 0)} jt`} color={rp} strong />
+                      <Row l="On total funding (one investor)" v={`Rp ${fmt(m.totalFunding, 0)} jt`} dim />
+                    </div>
+                    {/* fee toggles */}
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+                      {[["mgmt", "Management fee", "2% × total CAPEX"], ["perf", "Performance fee", "20% × net profit"]].map(([key, label, detail]) => (
+                        <button key={key} onClick={() => setFees((s) => ({ ...s, [key]: !s[key] }))}
+                          style={{ flex: "1 1 180px", display: "flex", alignItems: "center", gap: 11, background: SURF2, border: `1px solid ${fees[key] ? BONE : LINE}`, borderRadius: 6, padding: "10px 12px", cursor: "pointer", textAlign: "left", transition: "border-color .15s" }}>
+                          <span style={{ width: 38, height: 22, borderRadius: 999, background: fees[key] ? BONE : LINE, position: "relative", flexShrink: 0, transition: "background .15s" }}>
+                            <span style={{ position: "absolute", top: 2, left: fees[key] ? 18 : 2, width: 18, height: 18, borderRadius: "50%", background: SURF2, transition: "left .15s" }} />
+                          </span>
+                          <span>
+                            <span style={{ display: "block", fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 700, color: INK }}>{label} <span style={{ color: fees[key] ? STEEL : MUT, fontFamily: "'IBM Plex Mono',monospace", fontSize: 10 }}>{fees[key] ? "ON" : "OFF"}</span></span>
+                            <span style={{ display: "block", fontSize: 10.5, color: MUT, marginTop: 1 }}>{detail}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    <Foot>ROI is the estimated annual return to a single investor on the full amount invested, at steady state. Toggle the fees to see gross vs. net. Every figure flows from the live model above — move the capital lever or any driver and this recomputes instantly.</Foot>
+                  </>
+                );
+              })()}
             </Card>
 
             {/* CAPEX & FUNDING */}
