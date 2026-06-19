@@ -173,6 +173,7 @@ export default function App() {
   const [capital, setCapital] = useState(7.99);
   const [fees, setFees] = useState({ mgmt: true, perf: true, land: true });
   const [ticket, setTicket] = useState(2000); // investor capital in jt (Rp 2B default)
+  const [roiView, setRoiView] = useState("investor"); // "investor" | "landlord"
   const [open, setOpen] = useState({ rev: true, capex: false, opex: true, fac: false, mkt: false, comp: false });
 
   const set = (k, raw) => {
@@ -634,6 +635,13 @@ export default function App() {
 
             <Card id="roiS">
               <H right={<span style={{ fontSize: 11, color: MUT }}>annual · steady state</span>}>Investor Returns · ROI</H>
+              {/* view switch */}
+              <div style={{ display: "inline-flex", border: `1px solid ${LINE}`, borderRadius: 999, padding: 3, marginBottom: 14, background: SURF2 }}>
+                {[["investor", "Cash investor"], ["landlord", "Landlord-partner"]].map(([k, lbl]) => (
+                  <button key={k} onClick={() => setRoiView(k)}
+                    style={{ border: 0, cursor: "pointer", borderRadius: 999, padding: "6px 15px", fontFamily: "'Archivo',sans-serif", fontSize: 11.5, fontWeight: 700, letterSpacing: ".04em", background: roiView === k ? BONE : "transparent", color: roiView === k ? SURF : MUT }}>{lbl}</button>
+                ))}
+              </div>
               {(() => {
                 const annual = m.noi * 12;                          // gross annual net profit (jt)
                 const mgmt = 0.02 * m.totalCapex;                   // 2% of total CAPEX (jt)
@@ -648,28 +656,83 @@ export default function App() {
                 const pbYrs = myReturn > 0 ? tk / myReturn : Infinity;
                 const rp = netProject > 0 ? STEEL : EMBER;
                 const tFmt = (v) => v >= 1000 ? `Rp ${fmt(v / 1000, 2)}B` : `Rp ${fmt(v, 0)} jt`;
-                return (
-                  <>
-                    {/* INVESTOR TICKET INPUT */}
-                    <div style={{ background: SURF2, border: `1px solid ${LINE}`, borderRadius: 6, padding: "13px 14px", marginBottom: 14 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", color: MUT, marginBottom: 8 }}>
-                        <span>Your investment</span>
-                        <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: BONE, fontSize: 15 }}>{tFmt(tk)} <span style={{ color: MUT, fontSize: 11 }}>· {fmt(share * 100, 1)}% stake</span></span>
-                      </div>
-                      <input type="range" min={250} max={Math.round(m.totalFunding)} step={50} value={tk} onChange={(e) => setTicket(+e.target.value)} style={{ width: "100%", accentColor: BONE }} />
-                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, gap: 8, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 10.5, color: MUT }}>min Rp 250 jt</span>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                          {[1000, 2500, 5000].map((v) => (
-                            <button key={v} onClick={() => setTicket(Math.min(v, Math.round(m.totalFunding)))}
-                              style={{ background: ticket === v ? BONE : "transparent", color: ticket === v ? SURF : INK, border: `1px solid ${ticket === v ? BONE : LINE}`, borderRadius: 4, padding: "3px 9px", fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", cursor: "pointer" }}>{tFmt(v)}</button>
-                          ))}
-                          <button onClick={() => setTicket(Math.round(m.totalFunding))}
-                            style={{ background: "transparent", color: INK, border: `1px solid ${LINE}`, borderRadius: 4, padding: "3px 9px", fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", cursor: "pointer" }}>Full raise</button>
-                        </div>
+
+                // ── ticket slider (shared) ──
+                const ticketInput = (heading) => (
+                  <div style={{ background: SURF2, border: `1px solid ${LINE}`, borderRadius: 6, padding: "13px 14px", marginBottom: 14 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", color: MUT, marginBottom: 8 }}>
+                      <span>{heading}</span>
+                      <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: BONE, fontSize: 15 }}>{tFmt(tk)} <span style={{ color: MUT, fontSize: 11 }}>· {fmt(share * 100, 1)}% stake</span></span>
+                    </div>
+                    <input type="range" min={roiView === "landlord" ? 0 : 250} max={Math.round(m.totalFunding)} step={50} value={tk} onChange={(e) => setTicket(+e.target.value)} style={{ width: "100%", accentColor: BONE }} />
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 10.5, color: MUT }}>{roiView === "landlord" ? "Rp 0 (land only)" : "min Rp 250 jt"}</span>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {(roiView === "landlord" ? [0, 1000, 2500] : [1000, 2500, 5000]).map((v) => (
+                          <button key={v} onClick={() => setTicket(Math.min(v, Math.round(m.totalFunding)))}
+                            style={{ background: ticket === v ? BONE : "transparent", color: ticket === v ? SURF : INK, border: `1px solid ${ticket === v ? BONE : LINE}`, borderRadius: 4, padding: "3px 9px", fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", cursor: "pointer" }}>{v === 0 ? "Rp 0" : tFmt(v)}</button>
+                        ))}
+                        <button onClick={() => setTicket(Math.round(m.totalFunding))}
+                          style={{ background: "transparent", color: INK, border: `1px solid ${LINE}`, borderRadius: 4, padding: "3px 9px", fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", cursor: "pointer" }}>Full raise</button>
                       </div>
                     </div>
+                  </div>
+                );
 
+                // ── fee toggles (shared) ──
+                const feeToggles = (
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+                    {[["mgmt", "Management fee", "2% × total CAPEX"], ["perf", "Performance fee", "20% × net profit"], ["land", "Landlord equity", "20% golden share · net profit"]].map(([key, label, detail]) => (
+                      <button key={key} onClick={() => setFees((s) => ({ ...s, [key]: !s[key] }))}
+                        style={{ flex: "1 1 180px", display: "flex", alignItems: "center", gap: 11, background: SURF2, border: `1px solid ${fees[key] ? BONE : LINE}`, borderRadius: 6, padding: "10px 12px", cursor: "pointer", textAlign: "left", transition: "border-color .15s" }}>
+                        <span style={{ width: 38, height: 22, borderRadius: 999, background: fees[key] ? BONE : LINE, position: "relative", flexShrink: 0, transition: "background .15s" }}>
+                          <span style={{ position: "absolute", top: 2, left: fees[key] ? 18 : 2, width: 18, height: 18, borderRadius: "50%", background: SURF2, transition: "left .15s" }} />
+                        </span>
+                        <span>
+                          <span style={{ display: "block", fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 700, color: INK }}>{label} <span style={{ color: fees[key] ? STEEL : MUT, fontFamily: "'IBM Plex Mono',monospace", fontSize: 10 }}>{fees[key] ? "ON" : "OFF"}</span></span>
+                          <span style={{ display: "block", fontSize: 10.5, color: MUT, marginTop: 1 }}>{detail}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                );
+
+                if (roiView === "landlord") {
+                  // Landlord-partner: 20% golden share is THEIR income (for the land, no cash),
+                  // plus any optional cash co-investment earns pro-rata of the distributable.
+                  const goldenShare = land;                       // 20% of net profit, always (their equity)
+                  const cashReturn = netProject * share;          // pro-rata return on any cash they also put in
+                  const totalLand = goldenShare + cashReturn;
+                  const cashRoi = tk > 0 ? (cashReturn / tk) * 100 : 0;
+                  return (
+                    <>
+                      {ticketInput("Your cash co-investment (optional)")}
+                      <div style={{ display: "flex", alignItems: "flex-end", gap: 16, flexWrap: "wrap", padding: "2px 0 6px" }}>
+                        <div>
+                          <div style={{ fontFamily: "'Anton',sans-serif", fontSize: 46, lineHeight: .9, color: STEEL }}>{tFmt(totalLand)}<span style={{ fontSize: 18, color: MUT }}> / yr</span></div>
+                          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9.5, color: MUT, letterSpacing: ".06em", textTransform: "uppercase", marginTop: 6 }}>total annual return to you</div>
+                        </div>
+                        <div style={{ marginLeft: "auto", textAlign: "right" }}>
+                          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 16, color: STEEL }}>20%</div>
+                          <div style={{ fontSize: 11, color: MUT, marginTop: 3 }}>equity · golden share</div>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: 6 }}>
+                        <Row l="Landlord equity · 20% of net profit" v={`+ ${tFmt(goldenShare)}`} color={STEEL} strong />
+                        <Row l="for contributing the land — no cash, no rent charged" v="" sub dim />
+                        <Row l="Cash co-investment return (pro-rata)" v={tk > 0 ? `+ ${tFmt(cashReturn)}` : "—"} color={tk > 0 ? STEEL : MUT} />
+                        <Row l={tk > 0 ? `on ${tFmt(tk)} cash · ${fmt(cashRoi, 1)}% ROI` : "no cash invested"} v="" sub dim />
+                        <Row l="Total annual return to you" v={tFmt(totalLand)} color={STEEL} strong />
+                      </div>
+                      {feeToggles}
+                      <Foot>As landlord-partner, your 20% equity (the golden share) is your return for contributing the land in lieu of rent — it costs you no cash and the business is modelled rent-free, so it isn't double-paid. If you also co-invest cash, that earns a pro-rata return on top. Everything flows from the live model — move the capital lever or any driver and this recomputes instantly.</Foot>
+                    </>
+                  );
+                }
+
+                return (
+                  <>
+                    {ticketInput("Your investment")}
                     <div style={{ display: "flex", alignItems: "flex-end", gap: 16, flexWrap: "wrap", padding: "2px 0 6px" }}>
                       <div>
                         <div style={{ fontFamily: "'Anton',sans-serif", fontSize: 52, lineHeight: .9, color: rp }}>{fmt(roi, 1)}<span style={{ fontSize: 26 }}>%</span></div>
@@ -690,21 +753,7 @@ export default function App() {
                       <Row l="Your capital invested" v={tFmt(tk)} dim />
                       <Row l="Stake of total funding" v={`${fmt(share * 100, 1)}%`} dim />
                     </div>
-                    {/* fee toggles */}
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-                      {[["mgmt", "Management fee", "2% × total CAPEX"], ["perf", "Performance fee", "20% × net profit"], ["land", "Landlord equity", "20% golden share · net profit"]].map(([key, label, detail]) => (
-                        <button key={key} onClick={() => setFees((s) => ({ ...s, [key]: !s[key] }))}
-                          style={{ flex: "1 1 180px", display: "flex", alignItems: "center", gap: 11, background: SURF2, border: `1px solid ${fees[key] ? BONE : LINE}`, borderRadius: 6, padding: "10px 12px", cursor: "pointer", textAlign: "left", transition: "border-color .15s" }}>
-                          <span style={{ width: 38, height: 22, borderRadius: 999, background: fees[key] ? BONE : LINE, position: "relative", flexShrink: 0, transition: "background .15s" }}>
-                            <span style={{ position: "absolute", top: 2, left: fees[key] ? 18 : 2, width: 18, height: 18, borderRadius: "50%", background: SURF2, transition: "left .15s" }} />
-                          </span>
-                          <span>
-                            <span style={{ display: "block", fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 700, color: INK }}>{label} <span style={{ color: fees[key] ? STEEL : MUT, fontFamily: "'IBM Plex Mono',monospace", fontSize: 10 }}>{fees[key] ? "ON" : "OFF"}</span></span>
-                            <span style={{ display: "block", fontSize: 10.5, color: MUT, marginTop: 1 }}>{detail}</span>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                    {feeToggles}
                     <Foot>Enter your ticket above — returns scale to your pro-rata share of the raise. ROI % is the same for any amount; the Rupiah figure is what you personally earn per year at steady state. Toggle the fees for gross vs. net. Everything flows from the live model — move the capital lever or any driver and this recomputes instantly.</Foot>
                   </>
                 );
