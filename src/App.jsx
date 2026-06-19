@@ -171,7 +171,7 @@ export default function App() {
   const [memberProbe, setMemberProbe] = useState(300);
   const [scale, setScale] = useState({ fac: 1, mkt: 1, tech: 1, adm: 1 });
   const [capital, setCapital] = useState(7.99);
-  const [fees, setFees] = useState({ mgmt: true, perf: true });
+  const [fees, setFees] = useState({ mgmt: true, perf: true, land: true });
   const [ticket, setTicket] = useState(2000); // investor capital in jt (Rp 2B default)
   const [open, setOpen] = useState({ rev: true, capex: false, opex: true, fac: false, mkt: false, comp: false });
 
@@ -637,8 +637,9 @@ export default function App() {
               {(() => {
                 const annual = m.noi * 12;                          // gross annual net profit (jt)
                 const mgmt = 0.02 * m.totalCapex;                   // 2% of total CAPEX (jt)
-                const perf = 0.20 * annual;                         // 20% of net profit (jt)
-                const netProject = annual - (fees.mgmt ? mgmt : 0) - (fees.perf ? perf : 0); // distributable to all investors
+                const perf = 0.20 * annual;                         // 20% of net profit — operator carry (jt)
+                const land = 0.20 * annual;                         // 20% of net profit — landlord golden share (jt)
+                const netProject = annual - (fees.mgmt ? mgmt : 0) - (fees.perf ? perf : 0) - (fees.land ? land : 0); // distributable to cash investors
                 const roi = m.totalFunding > 0 ? (netProject / m.totalFunding) * 100 : 0;     // ROI % (same for any ticket)
                 const tk = Math.min(Math.max(ticket, 0), m.totalFunding);
                 const share = m.totalFunding > 0 ? tk / m.totalFunding : 0;                    // investor's stake of the raise
@@ -684,13 +685,14 @@ export default function App() {
                       <Row l="Your gross share of annual profit" v={`Rp ${fmt(myGross, 0)} jt`} strong />
                       <Row l="− Management fee · 2% of CAPEX" v={fees.mgmt ? `− ${fmt(0.02 * m.totalCapex * share, 1)}` : "— off"} sub dim color={fees.mgmt ? EMBER : MUT} />
                       <Row l="− Performance fee · 20% of net profit" v={fees.perf ? `− ${fmt(perf * share, 1)}` : "— off"} sub dim color={fees.perf ? EMBER : MUT} />
+                      <Row l="− Landlord equity · 20% of net profit" v={fees.land ? `− ${fmt(land * share, 1)}` : "— off"} sub dim color={fees.land ? EMBER : MUT} />
                       <Row l="Your net return / year" v={tFmt(myReturn)} color={rp} strong />
                       <Row l="Your capital invested" v={tFmt(tk)} dim />
                       <Row l="Stake of total funding" v={`${fmt(share * 100, 1)}%`} dim />
                     </div>
                     {/* fee toggles */}
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-                      {[["mgmt", "Management fee", "2% × total CAPEX"], ["perf", "Performance fee", "20% × net profit"]].map(([key, label, detail]) => (
+                      {[["mgmt", "Management fee", "2% × total CAPEX"], ["perf", "Performance fee", "20% × net profit"], ["land", "Landlord equity", "20% golden share · net profit"]].map(([key, label, detail]) => (
                         <button key={key} onClick={() => setFees((s) => ({ ...s, [key]: !s[key] }))}
                           style={{ flex: "1 1 180px", display: "flex", alignItems: "center", gap: 11, background: SURF2, border: `1px solid ${fees[key] ? BONE : LINE}`, borderRadius: 6, padding: "10px 12px", cursor: "pointer", textAlign: "left", transition: "border-color .15s" }}>
                           <span style={{ width: 38, height: 22, borderRadius: 999, background: fees[key] ? BONE : LINE, position: "relative", flexShrink: 0, transition: "background .15s" }}>
