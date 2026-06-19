@@ -939,6 +939,30 @@ export default function App() {
           </p>
         </div>
 
+        {/* BASIS OF PREPARATION — methodology footnote */}
+        <div style={{ border: `1px solid ${LINE}`, borderRadius: 8, padding: "18px 18px 16px", background: SURF }}>
+          <div style={{ fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: ".14em", textTransform: "uppercase", color: BONE, borderBottom: `1px solid ${LINE}`, paddingBottom: 8, marginBottom: 11 }}>Basis of Preparation · Notes & Assumptions</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))", gap: "9px 24px", fontSize: 11.5, lineHeight: 1.55, color: "#5A554A" }}>
+            {[
+              ["Currency & basis", "All figures in Indonesian Rupiah, stated in juta (jt) unless noted. Operating figures are steady-state monthly; returns are annualised."],
+              ["Capital tiers", "The funding range (Rp 7.99–10.20B) reflects build quality, equipment and fit-out tier. Member demand is market-driven and capped by capacity — it is not scaled by capital deployed."],
+              ["Payback", "Stated on a cumulative-cash basis including the 12-month member ramp (≈32 months at the lean build), not a steady-state shortcut."],
+              ["Tax", "Corporate income tax (PPh Badan) applied at 22% on profit after depreciation and the management charge."],
+              ["Depreciation & reserve", "Equipment over 5 years, leasehold build-out over 10 years, other setup over 5 years (≈Rp 754M/yr at lean) — held as a capex-replacement reserve."],
+              ["Rent", "Nil. Land is contributed by the landlord-partner in lieu of rent; the business is modelled rent-free, so the landlord's equity is not double-counted."],
+              ["Partner economics", "2% annual management fee on total CAPEX; 20% operator performance carry on after-tax net profit; landlord golden share up to 20% of after-tax net profit, negotiated against an independent appraisal of the land's market value."],
+              ["Investor returns", "Shown pro-rata to ticket size. ROI is annual and, unless toggled off, net of tax, replacement reserve and all partner shares."],
+            ].map(([k, v]) => (
+              <div key={k}>
+                <span style={{ fontFamily: "'Archivo',sans-serif", fontWeight: 700, color: INK }}>{k}. </span>{v}
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 10.5, lineHeight: 1.5, color: MUT, marginTop: 13, paddingTop: 11, borderTop: `1px dotted ${LINE}` }}>
+            Figures are illustrative projections prepared by management from the live operating model, not a guarantee of results. They are subject to due diligence, market conditions and definitive agreements. This material is confidential and is not an offer to sell or a solicitation to buy securities.
+          </div>
+        </div>
+
         <div style={{ textAlign: "center", padding: "20px 0 54px" }}>
           <div style={{ fontFamily: "'Anton',sans-serif", fontSize: 30, color: BONE, letterSpacing: ".02em" }}>SIRA</div>
           <div style={{ fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: ".28em", textTransform: "uppercase", color: MUT, marginTop: 2 }}>Muscle Studios</div>
