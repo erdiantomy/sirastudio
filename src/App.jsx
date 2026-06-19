@@ -172,6 +172,7 @@ export default function App() {
   const [scale, setScale] = useState({ fac: 1, mkt: 1, tech: 1, adm: 1 });
   const [capital, setCapital] = useState(7.99);
   const [fees, setFees] = useState({ mgmt: true, perf: true });
+  const [ticket, setTicket] = useState(2000); // investor capital in jt (Rp 2B default)
   const [open, setOpen] = useState({ rev: true, capex: false, opex: true, fac: false, mkt: false, comp: false });
 
   const set = (k, raw) => {
@@ -637,29 +638,55 @@ export default function App() {
                 const annual = m.noi * 12;                          // gross annual net profit (jt)
                 const mgmt = 0.02 * m.totalCapex;                   // 2% of total CAPEX (jt)
                 const perf = 0.20 * annual;                         // 20% of net profit (jt)
-                const net = annual - (fees.mgmt ? mgmt : 0) - (fees.perf ? perf : 0);
-                const roi = m.totalFunding > 0 ? (net / m.totalFunding) * 100 : 0;
-                const pbYrs = net > 0 ? m.totalFunding / net : Infinity;
-                const rp = net > 0 ? STEEL : EMBER;
+                const netProject = annual - (fees.mgmt ? mgmt : 0) - (fees.perf ? perf : 0); // distributable to all investors
+                const roi = m.totalFunding > 0 ? (netProject / m.totalFunding) * 100 : 0;     // ROI % (same for any ticket)
+                const tk = Math.min(Math.max(ticket, 0), m.totalFunding);
+                const share = m.totalFunding > 0 ? tk / m.totalFunding : 0;                    // investor's stake of the raise
+                const myReturn = netProject * share;                                          // investor's annual Rp return
+                const myGross = annual * share;
+                const pbYrs = myReturn > 0 ? tk / myReturn : Infinity;
+                const rp = netProject > 0 ? STEEL : EMBER;
+                const tFmt = (v) => v >= 1000 ? `Rp ${fmt(v / 1000, 2)}B` : `Rp ${fmt(v, 0)} jt`;
                 return (
                   <>
+                    {/* INVESTOR TICKET INPUT */}
+                    <div style={{ background: SURF2, border: `1px solid ${LINE}`, borderRadius: 6, padding: "13px 14px", marginBottom: 14 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", color: MUT, marginBottom: 8 }}>
+                        <span>Your investment</span>
+                        <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: BONE, fontSize: 15 }}>{tFmt(tk)} <span style={{ color: MUT, fontSize: 11 }}>· {fmt(share * 100, 1)}% stake</span></span>
+                      </div>
+                      <input type="range" min={250} max={Math.round(m.totalFunding)} step={50} value={tk} onChange={(e) => setTicket(+e.target.value)} style={{ width: "100%", accentColor: BONE }} />
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 10.5, color: MUT }}>min Rp 250 jt</span>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {[1000, 2500, 5000].map((v) => (
+                            <button key={v} onClick={() => setTicket(Math.min(v, Math.round(m.totalFunding)))}
+                              style={{ background: ticket === v ? BONE : "transparent", color: ticket === v ? SURF : INK, border: `1px solid ${ticket === v ? BONE : LINE}`, borderRadius: 4, padding: "3px 9px", fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", cursor: "pointer" }}>{tFmt(v)}</button>
+                          ))}
+                          <button onClick={() => setTicket(Math.round(m.totalFunding))}
+                            style={{ background: "transparent", color: INK, border: `1px solid ${LINE}`, borderRadius: 4, padding: "3px 9px", fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", cursor: "pointer" }}>Full raise</button>
+                        </div>
+                      </div>
+                    </div>
+
                     <div style={{ display: "flex", alignItems: "flex-end", gap: 16, flexWrap: "wrap", padding: "2px 0 6px" }}>
                       <div>
                         <div style={{ fontFamily: "'Anton',sans-serif", fontSize: 52, lineHeight: .9, color: rp }}>{fmt(roi, 1)}<span style={{ fontSize: 26 }}>%</span></div>
                         <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9.5, color: MUT, letterSpacing: ".06em", textTransform: "uppercase", marginTop: 6 }}>annual ROI · return on capital invested</div>
                       </div>
                       <div style={{ marginLeft: "auto", textAlign: "right" }}>
-                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 18, color: rp }}>Rp {fmt(net, 0)} jt<span style={{ fontSize: 11, color: MUT }}> / yr</span></div>
-                        <div style={{ fontSize: 11, color: MUT, marginTop: 3 }}>net return to investor</div>
+                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 20, color: rp }}>{tFmt(myReturn)}<span style={{ fontSize: 11, color: MUT }}> / yr</span></div>
+                        <div style={{ fontSize: 11, color: MUT, marginTop: 3 }}>your return on {tFmt(tk)}</div>
                         <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 13, color: INK, marginTop: 6 }}>{isFinite(pbYrs) ? `${fmt(pbYrs, 1)} yr payback` : "—"}</div>
                       </div>
                     </div>
                     <div style={{ marginTop: 6 }}>
-                      <Row l="Gross annual return" v={`Rp ${fmt(annual, 0)} jt`} strong />
-                      <Row l="− Management fee · 2% of CAPEX" v={fees.mgmt ? `− ${fmt(mgmt, 1)}` : "— off"} sub dim color={fees.mgmt ? EMBER : MUT} />
-                      <Row l="− Performance fee · 20% of net profit" v={fees.perf ? `− ${fmt(perf, 1)}` : "— off"} sub dim color={fees.perf ? EMBER : MUT} />
-                      <Row l="Net return to investor" v={`Rp ${fmt(net, 0)} jt`} color={rp} strong />
-                      <Row l="On total funding (one investor)" v={`Rp ${fmt(m.totalFunding, 0)} jt`} dim />
+                      <Row l="Your gross share of annual profit" v={`Rp ${fmt(myGross, 0)} jt`} strong />
+                      <Row l="− Management fee · 2% of CAPEX" v={fees.mgmt ? `− ${fmt(0.02 * m.totalCapex * share, 1)}` : "— off"} sub dim color={fees.mgmt ? EMBER : MUT} />
+                      <Row l="− Performance fee · 20% of net profit" v={fees.perf ? `− ${fmt(perf * share, 1)}` : "— off"} sub dim color={fees.perf ? EMBER : MUT} />
+                      <Row l="Your net return / year" v={tFmt(myReturn)} color={rp} strong />
+                      <Row l="Your capital invested" v={tFmt(tk)} dim />
+                      <Row l="Stake of total funding" v={`${fmt(share * 100, 1)}%`} dim />
                     </div>
                     {/* fee toggles */}
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
@@ -676,7 +703,7 @@ export default function App() {
                         </button>
                       ))}
                     </div>
-                    <Foot>ROI is the estimated annual return to a single investor on the full amount invested, at steady state. Toggle the fees to see gross vs. net. Every figure flows from the live model above — move the capital lever or any driver and this recomputes instantly.</Foot>
+                    <Foot>Enter your ticket above — returns scale to your pro-rata share of the raise. ROI % is the same for any amount; the Rupiah figure is what you personally earn per year at steady state. Toggle the fees for gross vs. net. Everything flows from the live model — move the capital lever or any driver and this recomputes instantly.</Foot>
                   </>
                 );
               })()}
