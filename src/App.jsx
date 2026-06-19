@@ -171,7 +171,8 @@ export default function App() {
   const [memberProbe, setMemberProbe] = useState(300);
   const [scale, setScale] = useState({ fac: 1, mkt: 1, tech: 1, adm: 1 });
   const [capital, setCapital] = useState(7.99);
-  const [fees, setFees] = useState({ mgmt: true, perf: true, land: true });
+  const [fees, setFees] = useState({ mgmt: true, perf: true, tax: true });
+  const [landPct, setLandPct] = useState(20); // landlord golden share %, capped at 20% (negotiable down)
   const [ticket, setTicket] = useState(2000); // investor capital in jt (Rp 2B default)
   const [roiView, setRoiView] = useState("investor"); // "investor" | "landlord"
   const [open, setOpen] = useState({ rev: true, capex: false, opex: true, fac: false, mkt: false, comp: false });
@@ -184,10 +185,11 @@ export default function App() {
   const toggle = (k) => setOpen((s) => ({ ...s, [k]: !s[k] }));
 
   const m = useMemo(() => {
-    // ── master capital lever: build multiplier scales the entire venture ──
+    // ── master capital lever: build/offering TIER. Scales the PLANT & cost base only. ──
     const bm = capital / FUND_BASE_B;          // 1.000 (lean 7.99B) → 1.277 (premium 10.20B)
-    const tgt = a.target_members * bm;          // effective steady-state members
-    const fnd = a.founding_members * bm;        // effective founding members
+    const maxMembers = (a.visits_per_member > 0 ? a.class_size * a.classes_per_day * a.days_per_month / a.visits_per_member : 0) * bm; // capacity scales with the build
+    const tgt = Math.min(a.target_members, maxMembers);   // DEMAND-driven (market), capped by capacity — NOT scaled by capital
+    const fnd = Math.min(a.founding_members, maxMembers);
 
     const payrollBase = a.amelie_base + a.edward_base_ops + a.headcoach_base
       + a.coaches_count * a.coach_base_each + a.frontdesk_count * a.frontdesk_each
@@ -213,7 +215,7 @@ export default function App() {
     const payFees = a.payment_fee_pct * totalRev;
     const prebonus = totalRev - payFees - fixedOpex;
     const bAmelieRev = a.amelie_revshare * totalRev;
-    const bAmelieKick = (tgt >= tgt * 0.7 ? a.amelie_retention_kicker : 0) * bm;
+    const bAmelieKick = (tgt >= tgt * 0.7 ? a.amelie_retention_kicker : 0);
     const bCoachPT = a.coach_pt_commission * ptRev;
     const bCoachPool = a.coach_perf_pool * membershipRev;
     const bEdward = a.edward_profit_kicker * Math.max(0, prebonus);
@@ -224,7 +226,6 @@ export default function App() {
 
     const beMemMembership = a.arpu > 0 ? fixedOpex / a.arpu : Infinity;
     const beMemBlended = (a.arpu + a.pt_yield + a.anc_yield) > 0 ? fixedOpex / (a.arpu + a.pt_yield + a.anc_yield) : Infinity;
-    const maxMembers = (a.visits_per_member > 0 ? a.class_size * a.classes_per_day * a.days_per_month / a.visits_per_member : 0) * bm;
     const capUtil = maxMembers > 0 ? tgt / maxMembers : 0;
 
     const facilityBuildout = (a.demolition + a.structural + a.hvac + a.flooring + a.mep
@@ -237,7 +238,8 @@ export default function App() {
     const fundingSub = totalCapex + a.preopening * bm + workingCapital;
     const contingency = a.contingency_pct * fundingSub;
     const totalFunding = fundingSub + contingency;
-    const payback = noi > 0 ? totalFunding / noi : Infinity;
+    const deprec = equipment / 5 + facilityBuildout / 10 + otherSetup / 5; // annual D&A / capex-replacement reserve (jt)
+    const paybackSteady = noi > 0 ? totalFunding / noi : Infinity;          // (kept for reference; NOT shown as headline)
 
     // 24-month ramp
     let cum = 0; let noiPosM = null; let cashPosM = null;
@@ -258,6 +260,12 @@ export default function App() {
       return { mo, members, rev, mNoi, cum };
     });
 
+    // ── honest capital payback: month cumulative cash first covers total funding (incl. ramp) ──
+    const cum24 = ramp[23].cum;
+    let payback = Infinity;
+    for (const r of ramp) { if (r.cum >= totalFunding) { payback = r.mo; break; } }
+    if (!isFinite(payback) && noi > 0) payback = 24 + Math.ceil((totalFunding - cum24) / noi);
+
     // member sensitivity probe
     const probeRev = memberProbe * (a.arpu + a.pt_yield + a.anc_yield);
     const probePre = probeRev - a.payment_fee_pct * probeRev - fixedOpex;
@@ -276,7 +284,7 @@ export default function App() {
       membershipRev, ptRev, ancRev, totalRev, revPerMember,
       payFees, prebonus, bAmelieRev, bAmelieKick, bCoachPT, bCoachPool, bEdward, bonusTotal,
       noi, noiMargin, revOpex, beMemMembership, beMemBlended, maxMembers, capUtil,
-      facilityBuildout, equipment, otherSetup, totalCapex, workingCapital, contingency, totalFunding, payback,
+      facilityBuildout, equipment, otherSetup, totalCapex, workingCapital, contingency, totalFunding, payback, paybackSteady, deprec,
       ramp, noiPosM, cashPosM, y2cum: ramp[23].cum, fundingRec: ramp[23].cum / totalFunding,
       probeRev, probeNoi, probeRatio, probeBonus,
     };
@@ -316,7 +324,7 @@ export default function App() {
             Jakarta's first capital-efficient Muscle Studios compound.
           </h1>
           <p style={{ fontSize: 15, lineHeight: 1.6, color: "#4A4638", maxWidth: 600, margin: "12px auto 0", fontWeight: 400 }}>
-            A 750 m² strength-and-recovery destination in Cilandak, South Jakarta. Nine revenue streams under one roof, ~55% operating margin, capital returned in under 25 months — and a live model you can pressure-test yourself, below.
+            A 750 m² strength-and-recovery destination in Cilandak, South Jakarta. Nine revenue streams under one roof, ~55% operating margin, and capital returned in about 32 months including ramp-up — with a live model you can pressure-test yourself, below.
           </p>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 14, marginTop: 18, flexWrap: "wrap", justifyContent: "center" }}>
             <div style={{ textAlign: "left" }}>
@@ -344,7 +352,7 @@ export default function App() {
             ["Funding req.", `Rp ${fmt(m.totalFunding / 1000, 2)}B`, `CAPEX ${fmt(m.totalCapex, 0)}`, BONE],
             ["NOI / mo", `Rp ${fmt(m.noi, 0)}`, `margin ${fmt(m.noiMargin * 100, 0)}%`, pos ? STEEL : EMBER],
             ["Rev / OPEX", `${fmt(m.revOpex, 2)}×`, "goal 2.0×+", m.revOpex >= 2 ? STEEL : INK],
-            ["Payback", isFinite(m.payback) ? `${fmt(m.payback, 0)} mo` : "∞", "steady NOI", pos ? BONE : EMBER],
+            ["Payback", isFinite(m.payback) ? `${fmt(m.payback, 0)} mo` : "∞", "incl. ramp", pos ? BONE : EMBER],
             ["Break-even", `${fmt(m.beMemMembership, 0)}`, "members · mbr-only", BONE],
           ].map(([l, v, s, c]) => (
             <div key={l}>
@@ -382,7 +390,7 @@ export default function App() {
             HYROX is the fastest-growing fitness format in the world and Jakarta has no purpose-built home for it. Premium wellness spend here is rising fast, but supply is fragmented: a strength gym here, a pilates studio there, a cold plunge somewhere else. SIRA puts the whole ritual under one roof, built lean, so every square metre earns more than once.
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 1, background: LINE, marginTop: 20, border: `1px solid ${LINE}` }}>
-            {[["9", "revenue streams", "one fixed cost base"], ["~55%", "operating margin", "after performance comp"], ["<25 mo", "capital payback", "at steady state"], ["750 m²", "Cilandak", "two levels, one compound"]].map(([v, k, s]) => (
+            {[["9", "revenue streams", "one fixed cost base"], ["~55%", "operating margin", "after performance comp"], ["~32 mo", "capital payback", "including ramp-up"], ["750 m²", "Cilandak", "two levels, one compound"]].map(([v, k, s]) => (
               <div key={k} style={{ background: SURF2, padding: "16px 14px" }}>
                 <div style={{ fontFamily: "'Anton',sans-serif", fontSize: 28, color: INK, lineHeight: 1 }}>{v}</div>
                 <div style={{ fontFamily: "'Archivo',sans-serif", fontSize: 10.5, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: INK, marginTop: 7 }}>{k}</div>
@@ -468,7 +476,7 @@ export default function App() {
         <Card id="model">
           <H right={<span style={{ fontSize: 11, color: EMBER }}>interactive · pressure-test it</span>}>The Live Model</H>
           <p style={{ fontSize: 14.5, lineHeight: 1.7, color: "#4A4638", maxWidth: 760, margin: "2px 0 0" }}>
-            This isn't a static projection — it's the real operating model, live. Move the <b style={{ color: INK }}>capital lever</b> between Rp 7.99B and 10.20B and the entire venture scales with it: CAPEX, capacity, members, OPEX, funding and the 24-month ramp all recompute simultaneously, while the unit economics hold. Drag any cost group, edit any line, and watch break-even and payback respond. The full control panel and ledgers are below.
+            This isn't a static projection — it's the real operating model, live. Move the <b style={{ color: INK }}>capital lever</b> between Rp 7.99B and 10.20B and the <b style={{ color: INK }}>build tier</b> scales with it: CAPEX, the quality of materials and equipment, capacity, the cost base, working capital and funding all recompute together. Member demand is set independently by the market (and capped by capacity), so returns respond honestly to how much you deploy — the lean build is the most capital-efficient. Drag any cost group, edit any line, and watch break-even, payback and ROI move.
           </p>
         </Card>
       </div>
@@ -634,7 +642,7 @@ export default function App() {
             </Card>
 
             <Card id="roiS">
-              <H right={<span style={{ fontSize: 11, color: MUT }}>annual · steady state</span>}>Investor Returns · ROI</H>
+              <H right={<span style={{ fontSize: 11, color: MUT }}>annual · {fees.tax ? "post-tax" : "pre-tax"}</span>}>Investor Returns · ROI</H>
               {/* view switch */}
               <div style={{ display: "inline-flex", border: `1px solid ${LINE}`, borderRadius: 999, padding: 3, marginBottom: 14, background: SURF2 }}>
                 {[["investor", "Cash investor"], ["landlord", "Landlord-partner"]].map(([k, lbl]) => (
@@ -643,23 +651,27 @@ export default function App() {
                 ))}
               </div>
               {(() => {
-                const annual = m.noi * 12;                          // gross annual net profit (jt)
-                const mgmt = 0.02 * m.totalCapex;                   // 2% of total CAPEX (jt)
-                const perf = 0.20 * annual;                         // 20% of net profit — operator carry (jt)
-                const land = 0.20 * annual;                         // 20% of net profit — landlord golden share (jt)
-                const netProject = annual - (fees.mgmt ? mgmt : 0) - (fees.perf ? perf : 0) - (fees.land ? land : 0); // distributable to cash investors
-                const roi = m.totalFunding > 0 ? (netProject / m.totalFunding) * 100 : 0;     // ROI % (same for any ticket)
+                // ── proper waterfall: operating profit → D&A/reserve → mgmt fee → tax → carry → landlord → cash investors ──
+                const opProfit = m.noi * 12;                          // operating profit / yr (after in-OPEX comp)
+                const deprec = m.deprec;                              // D&A / capex-replacement reserve (jt/yr)
+                const mgmt = 0.02 * m.totalCapex;                     // 2% of CAPEX — management charge (pre-tax)
+                const ebt = opProfit - deprec - (fees.mgmt ? mgmt : 0);          // earnings before tax
+                const tax = fees.tax ? 0.22 * Math.max(0, ebt) : 0;             // Indonesian PPh Badan 22%
+                const eat = ebt - tax;                                          // after-tax net profit
+                const perf = fees.perf ? 0.20 * Math.max(0, eat) : 0;           // 20% operator carry (on net profit)
+                const land = (landPct / 100) * Math.max(0, eat);               // landlord golden share (≤20%, on net profit)
+                const netProject = eat - perf - land;                          // distributable to cash investors
+                const roi = m.totalFunding > 0 ? (netProject / m.totalFunding) * 100 : 0;
                 const tk = Math.min(Math.max(ticket, 0), m.totalFunding);
-                const share = m.totalFunding > 0 ? tk / m.totalFunding : 0;                    // investor's stake of the raise
-                const myReturn = netProject * share;                                          // investor's annual Rp return
-                const myGross = annual * share;
+                const share = m.totalFunding > 0 ? tk / m.totalFunding : 0;
+                const myReturn = netProject * share;
                 const pbYrs = myReturn > 0 ? tk / myReturn : Infinity;
                 const rp = netProject > 0 ? STEEL : EMBER;
-                const tFmt = (v) => v >= 1000 ? `Rp ${fmt(v / 1000, 2)}B` : `Rp ${fmt(v, 0)} jt`;
+                const tFmt = (v) => Math.abs(v) >= 1000 ? `Rp ${fmt(v / 1000, 2)}B` : `Rp ${fmt(v, 0)} jt`;
 
                 // ── ticket slider (shared) ──
                 const ticketInput = (heading) => (
-                  <div style={{ background: SURF2, border: `1px solid ${LINE}`, borderRadius: 6, padding: "13px 14px", marginBottom: 14 }}>
+                  <div style={{ background: SURF2, border: `1px solid ${LINE}`, borderRadius: 6, padding: "13px 14px", marginBottom: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", color: MUT, marginBottom: 8 }}>
                       <span>{heading}</span>
                       <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: BONE, fontSize: 15 }}>{tFmt(tk)} <span style={{ color: MUT, fontSize: 11 }}>· {fmt(share * 100, 1)}% stake</span></span>
@@ -679,12 +691,23 @@ export default function App() {
                   </div>
                 );
 
-                // ── fee toggles (shared) ──
+                // ── landlord equity slider (max 20%) ──
+                const landSlider = (
+                  <div style={{ background: SURF2, border: `1px solid ${LINE}`, borderRadius: 6, padding: "11px 13px", marginTop: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", color: MUT, marginBottom: 7 }}>
+                      <span>Landlord equity · golden share</span>
+                      <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: BONE, fontSize: 14 }}>{fmt(landPct, 0)}% <span style={{ color: MUT, fontSize: 10 }}>· max 20%</span></span>
+                    </div>
+                    <input type="range" min={0} max={20} step={1} value={landPct} onChange={(e) => setLandPct(+e.target.value)} style={{ width: "100%", accentColor: BONE }} />
+                  </div>
+                );
+
+                // ── fee toggles (shared): mgmt · performance · tax ──
                 const feeToggles = (
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-                    {[["mgmt", "Management fee", "2% × total CAPEX"], ["perf", "Performance fee", "20% × net profit"], ["land", "Landlord equity", "20% golden share · net profit"]].map(([key, label, detail]) => (
+                    {[["mgmt", "Management fee", "2% × total CAPEX"], ["perf", "Performance fee", "20% × net profit"], ["tax", "Corporate tax", "22% PPh Badan"]].map(([key, label, detail]) => (
                       <button key={key} onClick={() => setFees((s) => ({ ...s, [key]: !s[key] }))}
-                        style={{ flex: "1 1 180px", display: "flex", alignItems: "center", gap: 11, background: SURF2, border: `1px solid ${fees[key] ? BONE : LINE}`, borderRadius: 6, padding: "10px 12px", cursor: "pointer", textAlign: "left", transition: "border-color .15s" }}>
+                        style={{ flex: "1 1 170px", display: "flex", alignItems: "center", gap: 11, background: SURF2, border: `1px solid ${fees[key] ? BONE : LINE}`, borderRadius: 6, padding: "10px 12px", cursor: "pointer", textAlign: "left", transition: "border-color .15s" }}>
                         <span style={{ width: 38, height: 22, borderRadius: 999, background: fees[key] ? BONE : LINE, position: "relative", flexShrink: 0, transition: "background .15s" }}>
                           <span style={{ position: "absolute", top: 2, left: fees[key] ? 18 : 2, width: 18, height: 18, borderRadius: "50%", background: SURF2, transition: "left .15s" }} />
                         </span>
@@ -698,34 +721,33 @@ export default function App() {
                 );
 
                 if (roiView === "landlord") {
-                  // Landlord-partner: 20% golden share is THEIR income (for the land, no cash),
-                  // plus any optional cash co-investment earns pro-rata of the distributable.
-                  const goldenShare = land;                       // 20% of net profit, always (their equity)
+                  const goldenShare = land;                       // their equity income (landPct of net profit)
                   const cashReturn = netProject * share;          // pro-rata return on any cash they also put in
                   const totalLand = goldenShare + cashReturn;
                   const cashRoi = tk > 0 ? (cashReturn / tk) * 100 : 0;
                   return (
                     <>
                       {ticketInput("Your cash co-investment (optional)")}
-                      <div style={{ display: "flex", alignItems: "flex-end", gap: 16, flexWrap: "wrap", padding: "2px 0 6px" }}>
+                      {landSlider}
+                      <div style={{ display: "flex", alignItems: "flex-end", gap: 16, flexWrap: "wrap", padding: "12px 0 6px" }}>
                         <div>
                           <div style={{ fontFamily: "'Anton',sans-serif", fontSize: 46, lineHeight: .9, color: STEEL }}>{tFmt(totalLand)}<span style={{ fontSize: 18, color: MUT }}> / yr</span></div>
-                          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9.5, color: MUT, letterSpacing: ".06em", textTransform: "uppercase", marginTop: 6 }}>total annual return to you</div>
+                          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9.5, color: MUT, letterSpacing: ".06em", textTransform: "uppercase", marginTop: 6 }}>total annual return to you · {fees.tax ? "post-tax" : "pre-tax"}</div>
                         </div>
                         <div style={{ marginLeft: "auto", textAlign: "right" }}>
-                          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 16, color: STEEL }}>20%</div>
+                          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 16, color: STEEL }}>{fmt(landPct, 0)}%</div>
                           <div style={{ fontSize: 11, color: MUT, marginTop: 3 }}>equity · golden share</div>
                         </div>
                       </div>
                       <div style={{ marginTop: 6 }}>
-                        <Row l="Landlord equity · 20% of net profit" v={`+ ${tFmt(goldenShare)}`} color={STEEL} strong />
+                        <Row l={`Landlord equity · ${fmt(landPct, 0)}% of net profit`} v={`+ ${tFmt(goldenShare)}`} color={STEEL} strong />
                         <Row l="for contributing the land — no cash, no rent charged" v="" sub dim />
                         <Row l="Cash co-investment return (pro-rata)" v={tk > 0 ? `+ ${tFmt(cashReturn)}` : "—"} color={tk > 0 ? STEEL : MUT} />
                         <Row l={tk > 0 ? `on ${tFmt(tk)} cash · ${fmt(cashRoi, 1)}% ROI` : "no cash invested"} v="" sub dim />
                         <Row l="Total annual return to you" v={tFmt(totalLand)} color={STEEL} strong />
                       </div>
                       {feeToggles}
-                      <Foot>As landlord-partner, your 20% equity (the golden share) is your return for contributing the land in lieu of rent — it costs you no cash and the business is modelled rent-free, so it isn't double-paid. If you also co-invest cash, that earns a pro-rata return on top. Everything flows from the live model — move the capital lever or any driver and this recomputes instantly.</Foot>
+                      <Foot>Your golden share (up to 20%) is your return for contributing the land in lieu of rent — no cash, and the business is modelled rent-free so it is never double-paid. Slide it to model a negotiated stake. All partner shares are taken from after-tax net profit. If you also co-invest cash, that earns a pro-rata return on top.</Foot>
                     </>
                   );
                 }
@@ -736,7 +758,7 @@ export default function App() {
                     <div style={{ display: "flex", alignItems: "flex-end", gap: 16, flexWrap: "wrap", padding: "2px 0 6px" }}>
                       <div>
                         <div style={{ fontFamily: "'Anton',sans-serif", fontSize: 52, lineHeight: .9, color: rp }}>{fmt(roi, 1)}<span style={{ fontSize: 26 }}>%</span></div>
-                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9.5, color: MUT, letterSpacing: ".06em", textTransform: "uppercase", marginTop: 6 }}>annual ROI · return on capital invested</div>
+                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9.5, color: MUT, letterSpacing: ".06em", textTransform: "uppercase", marginTop: 6 }}>annual ROI · {fees.tax ? "post-tax, net of reserve" : "pre-tax"}</div>
                       </div>
                       <div style={{ marginLeft: "auto", textAlign: "right" }}>
                         <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 20, color: rp }}>{tFmt(myReturn)}<span style={{ fontSize: 11, color: MUT }}> / yr</span></div>
@@ -745,16 +767,20 @@ export default function App() {
                       </div>
                     </div>
                     <div style={{ marginTop: 6 }}>
-                      <Row l="Your gross share of annual profit" v={`Rp ${fmt(myGross, 0)} jt`} strong />
-                      <Row l="− Management fee · 2% of CAPEX" v={fees.mgmt ? `− ${fmt(0.02 * m.totalCapex * share, 1)}` : "— off"} sub dim color={fees.mgmt ? EMBER : MUT} />
+                      <Row l="Your gross share of operating profit" v={`Rp ${fmt(opProfit * share, 0)} jt`} strong />
+                      <Row l="− Depreciation & replacement reserve" v={`− ${fmt(deprec * share, 1)}`} sub dim color={EMBER} />
+                      <Row l="− Management fee · 2% of CAPEX" v={fees.mgmt ? `− ${fmt(mgmt * share, 1)}` : "— off"} sub dim color={fees.mgmt ? EMBER : MUT} />
+                      <Row l="Pre-tax profit" v={`Rp ${fmt(ebt * share, 0)}`} dim strong />
+                      <Row l="− Corporate tax · 22% PPh Badan" v={fees.tax ? `− ${fmt(tax * share, 1)}` : "— off"} sub dim color={fees.tax ? EMBER : MUT} />
                       <Row l="− Performance fee · 20% of net profit" v={fees.perf ? `− ${fmt(perf * share, 1)}` : "— off"} sub dim color={fees.perf ? EMBER : MUT} />
-                      <Row l="− Landlord equity · 20% of net profit" v={fees.land ? `− ${fmt(land * share, 1)}` : "— off"} sub dim color={fees.land ? EMBER : MUT} />
+                      <Row l={`− Landlord equity · ${fmt(landPct, 0)}% of net profit`} v={landPct > 0 ? `− ${fmt(land * share, 1)}` : "— 0%"} sub dim color={landPct > 0 ? EMBER : MUT} />
                       <Row l="Your net return / year" v={tFmt(myReturn)} color={rp} strong />
                       <Row l="Your capital invested" v={tFmt(tk)} dim />
                       <Row l="Stake of total funding" v={`${fmt(share * 100, 1)}%`} dim />
                     </div>
+                    {landSlider}
                     {feeToggles}
-                    <Foot>Enter your ticket above — returns scale to your pro-rata share of the raise. ROI % is the same for any amount; the Rupiah figure is what you personally earn per year at steady state. Toggle the fees for gross vs. net. Everything flows from the live model — move the capital lever or any driver and this recomputes instantly.</Foot>
+                    <Foot>A full waterfall: operating profit, less depreciation/replacement reserve and a 2% management charge, taxed at 22%, then the operator carry (20%) and landlord equity (≤20%) come out of after-tax net profit. What remains is distributed pro-rata to your ticket. Toggle any line to see its impact; slide the landlord stake to model a negotiation. Everything flows from the live model above.</Foot>
                   </>
                 );
               })()}
@@ -878,7 +904,7 @@ export default function App() {
               </div>
             ))}
           </div>
-          <Foot>In return: a ~55% operating margin, capital back in under 25 months, and a brand designed to franchise. The first compound proves the model — the model is the asset. Every figure above is live in the model; move the capital lever to see the band.</Foot>
+          <Foot>In return: a ~55% operating margin, capital back in about 32 months including ramp-up, and a brand designed to franchise. The first compound proves the model — the model is the asset. Every figure above is live in the model; move the capital lever to see the band.</Foot>
         </Card>
 
         {/* WHY WE'RE DIFFERENT — closing manifesto */}
